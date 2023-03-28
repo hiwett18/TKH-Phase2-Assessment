@@ -6,16 +6,17 @@ const prisma = new PrismaClient();
 
 const router = express.Router();
 router.get('/', async (req, res) => {
-    const { firstName, lastName } = req.body;
+
 try {
     const users = await prisma.user.findMany({
         where: {
-            firstName: firstName,
-            lastName: lastName
+            isActive: true
         }
     });
 
     if (users) {
+        console.log(users)
+        console.log(users.length)
         res.status(200).json({
             success: true,
             users
@@ -23,16 +24,14 @@ try {
         });
     };
 } catch (e) {
-    res.status(500).json({
+    console.log(e)
+    res.status(400).json({
         success: false,
         message: "Could not find users"
     });
 };
    
-    res.json(users)
-    res.status(200).json({
-        success: true
-      })
+ 
     
   });
 
@@ -54,34 +53,64 @@ router.post('/', async (req, res) => {
     });
 
 
-router.post('/users/admins', async (req, res) => {
-        const { firstName, lastName, isAdmin, isActive } = req.body;
+router.post('/admins', async (req, res) => {
+    try {
         const newUser = await prisma.user.create({
             data: {
                 firstName: req.body.firstName,
                 lastName: req.body.lastName,
-                isAdmin: req.body.isAdmin,
-                isActive: req.body.isActive,
+                isAdmin: req.body.isAdmin !== "" ? req.body.isAdmin: false,
+                isActive: req.body.isActive !== "" ? req.body.isAdmin: true,
                 },
         });
-        res.json(newUser);
+        
+        if (newUser) {
+            console.log(newUser)
+            res.status(201).json({
+                success: true,
+                newUser
+            })
+        } else {
+            res.status(400).json({
+                success: false,
+                message: "User was not created"
+            })
+        }
+    } catch (e){
+        console.log(e);
+        res.status(400).json({
+            success: false, 
+            message: "Error"
+            })
+        }
         });
 
-router.get('/users/admins', async (req, res) => {
-    const { firstName, lastName, isAdmin, isActive } = req.body;
-    const newUser = await prisma.user.findMany({
-        data: {
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        isAdmin: req.body.isAdmin,
-        isActive: req.body.isActive,
+router.get('/admins', async (req, res) => {
+   try {
+    const admins = await prisma.user.findMany({
+        where: {
+            isAdmin:true,
         },
-    });
-    res.json(newUser);
-    res.status(200).json({
-        success: true,
-       
-      })
+    })
+       if (admins) {
+        res.status(200).json({
+            success: true,
+            users: admins
+        })
+       } else {
+        res.status(400).json({
+            success: false,
+            message: "admin not found"
+        });
+       }
+
+    } catch(e){
+        console.log(e)
+        res.status(400).json({
+            success: false,
+            message: "Error"
+        })
+    }
     });
 
 router.get("/:userId", async (req, res) => {
@@ -109,7 +138,7 @@ router.get("/:userId", async (req, res) => {
     });
 
 router.put("/:userId", async (req, res) => {
-            const id = req.params.userId;
+            
 
             try {
                 const user = await prisma.user.findFirstOrThrow({
@@ -148,6 +177,7 @@ router.put("/:userId", async (req, res) => {
                 });
             };
         });
+        
 router.delete("/:userId", async (req, res) => {
         const id = req.params.userId;
 
